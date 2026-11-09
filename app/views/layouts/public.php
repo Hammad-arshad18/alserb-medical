@@ -4,6 +4,17 @@ declare(strict_types=1);
 $metaTitle = $metaTitle ?? null;
 $metaDescription = $metaDescription ?? '';
 $bodyClass = $bodyClass ?? '';
+$metaKeywords = $metaKeywords ?? t('meta.keywords');
+$metaRobots = $metaRobots ?? 'index, follow, max-image-preview:large';
+$canonical = $canonical ?? canonical_url();
+$ogImage = $ogImage ?? absolute_url(asset('/assets/img/og-default.jpg'));
+$ogImageAlt = $ogImageAlt ?? t('site.name');
+$ogImageWidth = $ogImageWidth ?? 1200;
+$ogImageHeight = $ogImageHeight ?? 630;
+$ogImageType = $ogImageType ?? 'image/jpeg';
+$ogType = $ogType ?? 'website';
+$twitterSite = trim((string) config('app.twitter', ''));
+$jsonLd = $jsonLd ?? [];
 $pageTitle = $metaTitle !== null && $metaTitle !== ''
     ? $metaTitle . ' · ' . t('site.name')
     : t('site.name') . ' — ' . t('site.tagline');
@@ -30,16 +41,101 @@ $navItems = [
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($pageTitle) ?></title>
     <meta name="description" content="<?= e($metaDescription) ?>">
+    <meta name="keywords" content="<?= e($metaKeywords) ?>">
+    <meta name="robots" content="<?= e($metaRobots) ?>">
+    <meta name="author" content="<?= e(t('site.name')) ?>">
+    <meta name="application-name" content="<?= e(t('site.name')) ?>">
+    <meta name="theme-color" content="#041D33">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="<?= e(t('site.name')) ?>">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="geo.region" content="LY-BA">
+    <meta name="geo.placename" content="<?= e(setting_city()) ?>">
+    <link rel="canonical" href="<?= e($canonical) ?>">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="alternate" hreflang="ar" href="<?= e(alternate_url('ar')) ?>">
+    <link rel="alternate" hreflang="en" href="<?= e(alternate_url('en')) ?>">
+    <link rel="alternate" hreflang="x-default" href="<?= e(alternate_url('en')) ?>">
+    <meta property="og:site_name" content="<?= e(t('site.name')) ?>">
     <meta property="og:title" content="<?= e($pageTitle) ?>">
     <meta property="og:description" content="<?= e($metaDescription) ?>">
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="<?= e($ogType) ?>">
+    <meta property="og:url" content="<?= e($canonical) ?>">
     <meta property="og:locale" content="<?= current_lang() === 'ar' ? 'ar_LY' : 'en_GB' ?>">
+    <meta property="og:locale:alternate" content="<?= current_lang() === 'ar' ? 'en_GB' : 'ar_LY' ?>">
+    <meta property="og:image" content="<?= e($ogImage) ?>">
+    <?php if (str_starts_with($ogImage, 'https://')): ?>
+    <meta property="og:image:secure_url" content="<?= e($ogImage) ?>">
+    <?php endif; ?>
+    <meta property="og:image:type" content="<?= e($ogImageType) ?>">
+    <meta property="og:image:width" content="<?= (int) $ogImageWidth ?>">
+    <meta property="og:image:height" content="<?= (int) $ogImageHeight ?>">
+    <meta property="og:image:alt" content="<?= e($ogImageAlt) ?>">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?= e($pageTitle) ?>">
+    <meta name="twitter:description" content="<?= e($metaDescription) ?>">
+    <meta name="twitter:image" content="<?= e($ogImage) ?>">
+    <meta name="twitter:image:alt" content="<?= e($ogImageAlt) ?>">
+    <?php if ($twitterSite !== ''): ?>
+    <meta name="twitter:site" content="<?= e($twitterSite) ?>">
+    <meta name="twitter:creator" content="<?= e($twitterSite) ?>">
+    <?php endif; ?>
     <link rel="icon" href="<?= e(asset('/assets/img/favicon.svg')) ?>" type="image/svg+xml">
     <link rel="icon" href="<?= e(asset('/assets/img/favicon-32.png')) ?>" sizes="32x32" type="image/png">
     <link rel="apple-touch-icon" href="<?= e(asset('/assets/img/favicon-180.png')) ?>">
     <link rel="stylesheet" href="<?= e(asset('/assets/css/fonts.css')) ?>">
     <link rel="stylesheet" href="<?= e(asset('/assets/css/site.css')) ?>">
     <script src="<?= e(asset('/assets/js/site.js')) ?>" defer></script>
+    <?php
+    $siteUrl = app_url();
+    $organizationId = $siteUrl . '/#organization';
+    $graph = array_merge([
+        [
+            '@type' => 'MedicalBusiness',
+            '@id' => $organizationId,
+            'name' => t('site.name'),
+            'alternateName' => is_rtl() ? 'Alserb Medical' : 'السرب الطبي',
+            'description' => t('meta.about'),
+            'url' => $siteUrl . lang_url('/'),
+            'logo' => absolute_url('/assets/img/logo-lockup.png'),
+            'image' => $ogImage,
+            'telephone' => $phone,
+            'email' => $email,
+            'address' => [
+                '@type' => 'PostalAddress',
+                'streetAddress' => $address,
+                'addressLocality' => setting_city(),
+                'addressCountry' => 'LY',
+            ],
+            'areaServed' => [
+                '@type' => 'Country',
+                'name' => is_rtl() ? 'ليبيا' : 'Libya',
+            ],
+            'knowsLanguage' => ['ar', 'en'],
+        ],
+        [
+            '@type' => 'WebSite',
+            '@id' => $siteUrl . '/#website',
+            'url' => $siteUrl,
+            'name' => t('site.name'),
+            'inLanguage' => ['ar', 'en'],
+            'publisher' => ['@id' => $organizationId],
+            'potentialAction' => [
+                '@type' => 'SearchAction',
+                'target' => [
+                    '@type' => 'EntryPoint',
+                    'urlTemplate' => $siteUrl . '/' . current_lang() . '/equipment?q={search_term_string}',
+                ],
+                'query-input' => 'required name=search_term_string',
+            ],
+        ],
+    ], $jsonLd);
+    $schemaJson = json_encode(
+        ['@context' => 'https://schema.org', '@graph' => $graph],
+        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
+    );
+    ?>
+    <script type="application/ld+json"><?= $schemaJson ?></script>
 </head>
 <body class="<?= e($bodyClass) ?>">
 <a class="skip-link" href="#main"><?= is_rtl() ? 'تجاوز إلى المحتوى' : 'Skip to content' ?></a>

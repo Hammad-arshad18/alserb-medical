@@ -36,6 +36,7 @@ final class PublicSite
         render('public/home', [
             'metaTitle' => null,
             'metaDescription' => t('meta.home'),
+            'metaKeywords' => t('meta.keywords.home'),
             'bodyClass' => 'page-home',
             'categories' => $categories,
             'featured' => $featured,
@@ -47,6 +48,7 @@ final class PublicSite
         render('public/about', [
             'metaTitle' => t('nav.about'),
             'metaDescription' => t('meta.about'),
+            'metaKeywords' => t('meta.keywords.about'),
             'bodyClass' => 'page-about',
         ]);
     }
@@ -99,9 +101,60 @@ final class PublicSite
         $stmt->execute($params);
         $products = $stmt->fetchAll();
 
+        $equipmentUrl = canonical_url();
+        $listItems = [];
+        foreach ($products as $index => $item) {
+            $listItems[] = [
+                '@type' => 'ListItem',
+                'position' => $index + 1,
+                'name' => bi($item, 'name'),
+                'url' => app_url() . lang_url('/equipment/' . rawurlencode((string) $item['slug'])),
+            ];
+        }
+
+        $crumbs = [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => t('nav.home'), 'item' => app_url() . lang_url('/')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => t('nav.equipment'), 'item' => app_url() . lang_url('/equipment')],
+        ];
+        $pageName = $category !== null ? bi($category, 'name') : t('nav.equipment');
+        if ($category !== null) {
+            $crumbs[] = [
+                '@type' => 'ListItem',
+                'position' => 3,
+                'name' => bi($category, 'name'),
+                'item' => $equipmentUrl,
+            ];
+        }
+
+        $jsonLd = [
+            [
+                '@type' => 'CollectionPage',
+                '@id' => $equipmentUrl . '#page',
+                'url' => $equipmentUrl,
+                'name' => $pageName,
+                'description' => $category !== null ? bi($category, 'summary') : t('meta.equipment'),
+                'inLanguage' => current_lang(),
+                'isPartOf' => ['@id' => app_url() . '/#website'],
+                'mainEntity' => [
+                    '@type' => 'ItemList',
+                    'numberOfItems' => count($listItems),
+                    'itemListElement' => $listItems,
+                ],
+            ],
+            ['@type' => 'BreadcrumbList', 'itemListElement' => $crumbs],
+        ];
+
+        $keywords = t('meta.keywords.equipment');
+        if ($category !== null) {
+            $keywords = bi($category, 'name') . ', ' . $keywords;
+        }
+
         render('public/equipment', [
             'metaTitle' => $category !== null ? bi($category, 'name') : t('nav.equipment'),
             'metaDescription' => t('meta.equipment'),
+            'metaKeywords' => $keywords,
+            'metaRobots' => $query !== '' ? 'noindex, follow' : 'index, follow, max-image-preview:large',
+            'jsonLd' => $jsonLd,
             'bodyClass' => 'page-equipment',
             'categories' => $categories,
             'category' => $category,
@@ -135,9 +188,49 @@ final class PublicSite
         $relatedStmt->execute([(int) $product['category_id'], (int) $product['id']]);
         $related = $relatedStmt->fetchAll();
 
+        $productUrl = app_url() . lang_url('/equipment/' . rawurlencode((string) $product['slug']));
+        $productImage = preg_replace('/\?.*$/', '', absolute_url(image_url((string) $product['image'])));
+        $productImageMeta = image_dimensions((string) $product['image']);
+        $categoryUrl = app_url() . lang_url('/equipment?category=' . rawurlencode((string) $product['category_slug']));
+
+        $jsonLd = [
+            [
+                '@type' => 'Product',
+                '@id' => $productUrl . '#product',
+                'name' => bi($product, 'name'),
+                'description' => excerpt(bi($product, 'description'), 320),
+                'image' => [$productImage],
+                'url' => $productUrl,
+                'category' => bi($product, 'category_name'),
+                'inLanguage' => current_lang(),
+                'isPartOf' => ['@id' => app_url() . '/#website'],
+            ],
+            [
+                '@type' => 'BreadcrumbList',
+                'itemListElement' => [
+                    ['@type' => 'ListItem', 'position' => 1, 'name' => t('nav.home'), 'item' => app_url() . lang_url('/')],
+                    ['@type' => 'ListItem', 'position' => 2, 'name' => t('nav.equipment'), 'item' => app_url() . lang_url('/equipment')],
+                    ['@type' => 'ListItem', 'position' => 3, 'name' => bi($product, 'category_name'), 'item' => $categoryUrl],
+                    ['@type' => 'ListItem', 'position' => 4, 'name' => bi($product, 'name'), 'item' => $productUrl],
+                ],
+            ],
+        ];
+
         render('public/product', [
             'metaTitle' => bi($product, 'name'),
             'metaDescription' => excerpt(bi($product, 'summary'), 155),
+            'metaKeywords' => t('meta.keywords.product', [
+                'name' => bi($product, 'name'),
+                'category' => bi($product, 'category_name'),
+                'city' => setting_city(),
+            ]),
+            'ogImage' => $productImage,
+            'ogImageAlt' => bi($product, 'name'),
+            'ogImageWidth' => $productImageMeta['width'],
+            'ogImageHeight' => $productImageMeta['height'],
+            'ogImageType' => $productImageMeta['type'],
+            'ogType' => 'product',
+            'jsonLd' => $jsonLd,
             'bodyClass' => 'page-product',
             'product' => $product,
             'related' => $related,
@@ -149,6 +242,7 @@ final class PublicSite
         render('public/supply', [
             'metaTitle' => t('nav.supply'),
             'metaDescription' => t('meta.supply'),
+            'metaKeywords' => t('meta.keywords.supply'),
             'bodyClass' => 'page-supply',
         ]);
     }
@@ -160,6 +254,8 @@ final class PublicSite
         render('public/cart', [
             'metaTitle' => t('cart.title'),
             'metaDescription' => t('meta.cart'),
+            'metaKeywords' => t('meta.keywords.cart'),
+            'metaRobots' => 'noindex, nofollow',
             'bodyClass' => 'page-cart',
             'lines' => $lines,
         ]);
@@ -366,6 +462,8 @@ final class PublicSite
         render('public/checkout', [
             'metaTitle' => t('checkout.title'),
             'metaDescription' => t('meta.checkout'),
+            'metaKeywords' => t('meta.keywords.checkout'),
+            'metaRobots' => 'noindex, nofollow',
             'bodyClass' => 'page-checkout',
             'lines' => $lines,
             'errors' => $errors,
@@ -384,6 +482,8 @@ final class PublicSite
         render('public/order', [
             'metaTitle' => t('order.title') . ' ' . $order['reference'],
             'metaDescription' => t('meta.order'),
+            'metaKeywords' => t('meta.keywords.order'),
+            'metaRobots' => 'noindex, nofollow',
             'bodyClass' => 'page-order',
             'order' => $order,
             'lines' => order_lines((int) $order['id']),
@@ -419,6 +519,8 @@ final class PublicSite
         render('public/track', [
             'metaTitle' => t('track.title'),
             'metaDescription' => t('meta.track'),
+            'metaKeywords' => t('meta.keywords.track'),
+            'metaRobots' => 'noindex, nofollow',
             'bodyClass' => 'page-track',
             'error' => $error,
             'old' => $old,
@@ -520,6 +622,7 @@ final class PublicSite
         render('public/contact', [
             'metaTitle' => t('nav.contact'),
             'metaDescription' => t('meta.contact', ['city' => setting_city()]),
+            'metaKeywords' => t('meta.keywords.contact', ['city' => setting_city()]),
             'bodyClass' => 'page-contact',
             'errors' => $errors,
             'old' => $old,
@@ -533,6 +636,7 @@ final class PublicSite
         render('public/credits', [
             'metaTitle' => t('credits.title'),
             'metaDescription' => t('meta.credits'),
+            'metaKeywords' => t('meta.keywords.credits'),
             'bodyClass' => 'page-credits',
         ]);
     }
@@ -561,5 +665,87 @@ final class PublicSite
         $row = $stmt->fetch();
 
         return $row ?: null;
+    }
+
+    public static function robots(): void
+    {
+        header('Content-Type: text/plain; charset=utf-8');
+
+        $lines = [
+            'User-agent: *',
+            'Allow: /',
+            'Disallow: /admin',
+            'Disallow: /ar/cart',
+            'Disallow: /en/cart',
+            'Disallow: /ar/checkout',
+            'Disallow: /en/checkout',
+            'Disallow: /ar/order/',
+            'Disallow: /en/order/',
+            'Disallow: /ar/track',
+            'Disallow: /en/track',
+            'Disallow: /*?q=',
+            '',
+            'Sitemap: ' . app_url() . '/sitemap.xml',
+        ];
+
+        echo implode("\n", $lines) . "\n";
+    }
+
+    public static function sitemap(): void
+    {
+        $base = app_url();
+
+        $pages = [
+            ['path' => '/', 'lastmod' => null],
+            ['path' => '/about', 'lastmod' => null],
+            ['path' => '/equipment', 'lastmod' => null],
+            ['path' => '/supply', 'lastmod' => null],
+            ['path' => '/contact', 'lastmod' => null],
+            ['path' => '/credits', 'lastmod' => null],
+        ];
+
+        $categories = db()->query(
+            'SELECT slug, updated_at FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, id ASC'
+        )->fetchAll();
+        foreach ($categories as $category) {
+            $pages[] = [
+                'path' => '/equipment?category=' . rawurlencode((string) $category['slug']),
+                'lastmod' => substr((string) $category['updated_at'], 0, 10),
+            ];
+        }
+
+        $products = db()->query(
+            'SELECT slug, updated_at FROM products WHERE is_active = 1 ORDER BY sort_order ASC, id ASC'
+        )->fetchAll();
+        foreach ($products as $product) {
+            $pages[] = [
+                'path' => '/equipment/' . rawurlencode((string) $product['slug']),
+                'lastmod' => substr((string) $product['updated_at'], 0, 10),
+            ];
+        }
+
+        header('Content-Type: application/xml; charset=utf-8');
+
+        echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' . "\n";
+
+        foreach ($pages as $page) {
+            $suffix = $page['path'] === '/' ? '' : $page['path'];
+            $lastmod = $page['lastmod'] !== null && $page['lastmod'] !== ''
+                ? '    <lastmod>' . e($page['lastmod']) . "</lastmod>\n"
+                : '';
+
+            foreach (['ar', 'en'] as $lang) {
+                echo "  <url>\n";
+                echo '    <loc>' . e($base . '/' . $lang . $suffix) . "</loc>\n";
+                echo $lastmod;
+                echo '    <xhtml:link rel="alternate" hreflang="ar" href="' . e($base . '/ar' . $suffix) . "\"/>\n";
+                echo '    <xhtml:link rel="alternate" hreflang="en" href="' . e($base . '/en' . $suffix) . "\"/>\n";
+                echo '    <xhtml:link rel="alternate" hreflang="x-default" href="' . e($base . '/en' . $suffix) . "\"/>\n";
+                echo "  </url>\n";
+            }
+        }
+
+        echo "</urlset>\n";
     }
 }

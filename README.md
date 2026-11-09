@@ -73,6 +73,14 @@ php bin/password.php --username=admin --password='new password'
 
 Equipment pages accept `?category={slug}` for the department filter and `?q={term}` for the catalog search. The contact page accepts `?product={slug}` to preselect an item on the quotation form. Order links use a random token; customers can also reach the order page from the footer by entering the order number and the email used on the order.
 
+## Search engines
+
+- `robots.txt` and `sitemap.xml` are generated from the database and the configured base URL (`app.url`). The sitemap lists every static page, department filter, and active product in both languages, with `hreflang` alternates.
+- Every public page outputs a unique title, description, keywords, canonical URL, `hreflang` links for Arabic, English, and `x-default`, Open Graph tags, and Twitter card tags.
+- Structured data is emitted as JSON-LD: `MedicalBusiness` and `WebSite` site-wide, `Product` and `BreadcrumbList` on equipment pages, and `CollectionPage` with an `ItemList` on the catalog.
+- Catalog search results (`?q=`) are `noindex, follow`; cart, checkout, order status, and tracking pages are `noindex, nofollow`. Admin pages are excluded in `robots.txt`.
+- Set `app.url` to the final public origin (for example `https://alserbmedical.com`) so canonical, Open Graph, sitemap, and email links are absolute and correct.
+
 ## Admin panel
 
 The admin interface is English. Product, department, and page-text fields are paired Arabic and English. Public URLs are generated automatically from the English name; staff never edit slugs.

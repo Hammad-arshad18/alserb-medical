@@ -94,6 +94,16 @@ $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $requestPath = rawurldecode($requestPath);
 $requestPath = '/' . trim(preg_replace('#/{2,}#', '/', $requestPath) ?? $requestPath, '/');
 
+if ($requestPath === '/robots.txt') {
+    PublicSite::robots();
+    exit;
+}
+
+if ($requestPath === '/sitemap.xml') {
+    PublicSite::sitemap();
+    exit;
+}
+
 if ($requestPath === '/') {
     redirect('/ar');
 }

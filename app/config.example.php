@@ -21,6 +21,8 @@ return [
     'app' => [
         'debug' => true,
         'url' => 'http://localhost:8080',
+        // Optional X/Twitter handle, e.g. '@alserbmedical'. Leave empty to omit.
+        'twitter' => '',
     ],
 
     'mail' => [

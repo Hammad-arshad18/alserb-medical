@@ -22,8 +22,10 @@ return [
 
     'app' => [
         'debug' => false,
-        // Order-tracking links inside emails are built from this value.
+        // Public base URL. Used for canonical, Open Graph, sitemap and email links.
         'url' => 'https://alserbmedical.com',
+        // Optional X/Twitter handle, e.g. '@alserbmedical'. Leave empty to omit.
+        'twitter' => '',
     ],
 
     'mail' => [

@@ -100,6 +100,50 @@ function switch_lang_url(): string
     return $path . $query;
 }
 
+/**
+ * Absolute URL for a site-relative path.
+ */
+function absolute_url(string $path): string
+{
+    if (preg_match('#^https?://#i', $path)) {
+        return $path;
+    }
+
+    return app_url() . '/' . ltrim($path, '/');
+}
+
+/**
+ * Canonical URL for the current page. Search queries are dropped so the
+ * catalog page stays the canonical target; the category filter is kept.
+ */
+function canonical_url(): string
+{
+    $path = current_path();
+    $url = absolute_url('/' . current_lang() . ($path === '/' ? '' : $path));
+
+    if ($path === '/equipment' && ($category = get_string('category')) !== '') {
+        $url .= '?category=' . rawurlencode($category);
+    }
+
+    return $url;
+}
+
+/**
+ * Same page in the other language, used for hreflang links.
+ */
+function alternate_url(string $lang): string
+{
+    $lang = $lang === 'en' ? 'en' : 'ar';
+    $path = current_path();
+    $url = absolute_url('/' . $lang . ($path === '/' ? '' : $path));
+
+    if ($path === '/equipment' && ($category = get_string('category')) !== '') {
+        $url .= '?category=' . rawurlencode($category);
+    }
+
+    return $url;
+}
+
 function current_path(): string
 {
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
@@ -498,6 +542,37 @@ function image_url(?string $name, string $fallback = ''): string
     }
 
     return asset('/assets/img/placeholder.svg');
+}
+
+/**
+ * Intrinsic dimensions and MIME type of a catalog image.
+ *
+ * @return array{width: int, height: int, type: string}
+ */
+function image_dimensions(?string $name, ?string $fallback = ''): array
+{
+    $name = $name !== null && $name !== '' ? basename($name) : ($fallback !== null ? basename($fallback) : '');
+    $paths = [
+        PUBLIC_ROOT . '/uploads/' . $name,
+        PUBLIC_ROOT . '/assets/img/' . $name,
+    ];
+
+    foreach ($paths as $path) {
+        if ($name === '' || !is_file($path)) {
+            continue;
+        }
+
+        $info = @getimagesize($path);
+        if (is_array($info) && $info[0] > 0 && $info[1] > 0) {
+            return [
+                'width' => (int) $info[0],
+                'height' => (int) $info[1],
+                'type' => (string) ($info['mime'] ?? 'image/jpeg'),
+            ];
+        }
+    }
+
+    return ['width' => 1200, 'height' => 630, 'type' => 'image/jpeg'];
 }
 
 function slugify(string $text): string
