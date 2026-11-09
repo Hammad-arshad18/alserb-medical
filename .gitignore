@@ -1,0 +1,7 @@
+app/config.local.php
+public/uploads/*
+!public/uploads/.htaccess
+!public/uploads/.gitkeep
+.DS_Store
+*.log
+PLAN.md

@@ -1,0 +1,7 @@
+Options -Indexes
+RewriteEngine On
+
+# Send every request that is not an existing file or directory to the front controller.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]

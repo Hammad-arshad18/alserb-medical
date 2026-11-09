@@ -1,0 +1,6 @@
+Options -Indexes
+
+# Uploaded images only. Never execute anything in this directory.
+<FilesMatch "\.(php|phtml|phar|php[0-9]*|inc)$">
+    Require all denied
+</FilesMatch>
