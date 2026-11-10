@@ -125,6 +125,26 @@ if (preg_match('#^/(ar|en)(/.*)?$#', $requestPath, $match)) {
     not_found();
 }
 
+// A POST body larger than post_max_size arrives empty, which would otherwise
+// surface as a misleading "session expired" error. Catch it first.
+$contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+$postMax = ini_bytes((string) ini_get('post_max_size'));
+if (
+    ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST'
+    && $_POST === []
+    && $_FILES === []
+    && $postMax > 0
+    && $contentLength > $postMax
+) {
+    http_response_code(413);
+    render('public/413', [
+        'metaTitle' => t('error.413.title'),
+        'metaDescription' => t('error.413.body'),
+        'metaRobots' => 'noindex, nofollow',
+    ]);
+    exit;
+}
+
 rate_limit('general', 300, 60);
 
 $router = new Router();

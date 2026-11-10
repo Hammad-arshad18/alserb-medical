@@ -463,22 +463,106 @@ function not_found(): never
 }
 
 /**
+ * Absolute path of the public uploads directory.
+ *
+ * It follows the real document root instead of a project-relative `public/`
+ * path, so the app works whether `public/` is served directly or its files
+ * are copied into the host's `public_html/` folder.
+ */
+function uploads_dir(): string
+{
+    if (defined('PUBLIC_ROOT')) {
+        return PUBLIC_ROOT . '/uploads';
+    }
+
+    return APP_ROOT . '/public/uploads';
+}
+
+/**
+ * Parses a php.ini size value ("8M", "512K", "1G") into bytes.
+ */
+function ini_bytes(string $value): int
+{
+    $value = trim($value);
+    if ($value === '') {
+        return 0;
+    }
+
+    $unit = strtolower(substr($value, -1));
+    $number = (float) $value;
+
+    return match ($unit) {
+        'g' => (int) round($number * 1024 ** 3),
+        'm' => (int) round($number * 1024 ** 2),
+        'k' => (int) round($number * 1024),
+        default => (int) $number,
+    };
+}
+
+/**
+ * Largest image the server will actually accept, in bytes. Respects the
+ * application limit but never promises more than PHP or post_max_size allow.
+ */
+function upload_limit_bytes(): int
+{
+    $limits = [(int) config('max_upload_bytes', 4 * 1024 * 1024)];
+
+    $uploadMax = ini_bytes((string) ini_get('upload_max_filesize'));
+    if ($uploadMax > 0) {
+        $limits[] = $uploadMax;
+    }
+
+    $postMax = ini_bytes((string) ini_get('post_max_size'));
+    if ($postMax > 0) {
+        // Leave room for the other form fields inside the same POST body.
+        $limits[] = max(1024 * 1024, $postMax - 1024 * 1024);
+    }
+
+    return max(1024, min($limits));
+}
+
+function upload_limit_label(): string
+{
+    $bytes = upload_limit_bytes();
+
+    if ($bytes >= 1024 * 1024) {
+        $mb = rtrim(rtrim(number_format($bytes / (1024 * 1024), 1, '.', ''), '0'), '.');
+
+        return $mb . ' MB';
+    }
+
+    return max(1, (int) round($bytes / 1024)) . ' KB';
+}
+
+/**
  * Stores an uploaded image in public/uploads and returns its file name.
  */
 function handle_image_upload(array $file, ?string &$error = null): ?string
 {
-    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+    $code = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+
+    if ($code === UPLOAD_ERR_NO_FILE) {
         return null;
     }
 
-    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-        $error = 'The image could not be uploaded. Please try again.';
+    if ($code === UPLOAD_ERR_INI_SIZE || $code === UPLOAD_ERR_FORM_SIZE) {
+        $error = 'The image is larger than the server accepts (up to ' . upload_limit_label() . '). Resize it and try again.';
         return null;
     }
 
-    $max = (int) config('max_upload_bytes', 4 * 1024 * 1024);
+    if ($code === UPLOAD_ERR_PARTIAL) {
+        $error = 'The upload was interrupted. Please try again.';
+        return null;
+    }
+
+    if ($code !== UPLOAD_ERR_OK) {
+        $error = 'The image could not be uploaded (error ' . $code . '). Please try again.';
+        return null;
+    }
+
+    $max = upload_limit_bytes();
     if ((int) ($file['size'] ?? 0) > $max) {
-        $error = 'The image is larger than the 4 MB limit.';
+        $error = 'The image is larger than the ' . upload_limit_label() . ' limit. Resize it and try again.';
         return null;
     }
 
@@ -495,9 +579,14 @@ function handle_image_upload(array $file, ?string &$error = null): ?string
         return null;
     }
 
-    $dir = (string) config('uploads_dir');
+    $dir = uploads_dir();
     if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
-        $error = 'The upload directory is not writable.';
+        $error = 'The upload directory could not be created. Ask the host to make the site root writable.';
+        return null;
+    }
+
+    if (!is_writable($dir)) {
+        $error = 'The upload directory is not writable. Ask the host to give the site root write permission.';
         return null;
     }
 
@@ -516,7 +605,7 @@ function delete_upload(?string $name): void
         return;
     }
 
-    $path = (string) config('uploads_dir') . '/' . basename($name);
+    $path = uploads_dir() . '/' . basename($name);
     if (is_file($path)) {
         @unlink($path);
     }
@@ -533,8 +622,19 @@ function image_url(?string $name, string $fallback = ''): string
         return asset('/assets/img/placeholder.svg');
     }
 
-    if (is_file(PUBLIC_ROOT . '/uploads/' . $name)) {
+    if (is_file(uploads_dir() . '/' . $name)) {
         return '/uploads/' . rawurlencode($name);
+    }
+
+    // Hosting migration: files written by older builds lived in the
+    // project-relative public/uploads folder, which may sit outside the web
+    // root. Move one into the real web root when possible so it starts serving.
+    $legacy = APP_ROOT . '/public/uploads/' . $name;
+    $target = uploads_dir() . '/' . $name;
+    if ($legacy !== $target && is_file($legacy) && is_dir(uploads_dir()) && is_writable(uploads_dir())) {
+        if (@rename($legacy, $target)) {
+            return '/uploads/' . rawurlencode($name);
+        }
     }
 
     if (is_file(PUBLIC_ROOT . '/assets/img/' . $name)) {
@@ -553,7 +653,7 @@ function image_dimensions(?string $name, ?string $fallback = ''): array
 {
     $name = $name !== null && $name !== '' ? basename($name) : ($fallback !== null ? basename($fallback) : '');
     $paths = [
-        PUBLIC_ROOT . '/uploads/' . $name,
+        uploads_dir() . '/' . $name,
         PUBLIC_ROOT . '/assets/img/' . $name,
     ];
 

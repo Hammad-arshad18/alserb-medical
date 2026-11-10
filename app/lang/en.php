@@ -183,6 +183,8 @@ return [
     'error.404.back' => 'Return to the home page',
     'error.419.title' => 'Session expired',
     'error.419.body' => 'The form could not be verified. Go back, reload the page, and try again.',
+    'error.413.title' => 'Upload too large',
+    'error.413.body' => 'The form was larger than the server accepts. If you attached an image, resize it and try again.',
     'error.generic.title' => 'Something went wrong',
     'error.generic.body' => 'Please try again later.',
 

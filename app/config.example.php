@@ -41,9 +41,8 @@ return [
         'admin_to' => 'info@example.com',
     ],
 
-    // Absolute path and public URL for uploaded catalog images.
-    'uploads_dir' => dirname(__DIR__) . '/public/uploads',
-    'uploads_url' => '/uploads',
+    // Uploads are written to <document root>/uploads and created automatically.
+    // No path setting is needed, so the app works from `public/` or `public_html/`.
 
     // Maximum accepted size for one uploaded image, in bytes.
     'max_upload_bytes' => 4 * 1024 * 1024,

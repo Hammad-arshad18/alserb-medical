@@ -95,8 +95,8 @@ $action = $isEdit ? '/admin/categories/' . (int) $category['id'] . '/edit' : '/a
             </div>
             <div class="media-field__body">
                 <label for="image">Replace image</label>
-                <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" data-image-input>
-                <p class="field__help">JPEG, PNG, or WebP up to 4 MB. This photograph is used on the home page and as the fallback for items without their own image.</p>
+                <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp" data-image-input data-max-bytes="<?= upload_limit_bytes() ?>" data-max-dimension="1800">
+                <p class="field__help">JPEG, PNG, or WebP up to <?= e(upload_limit_label()) ?>. Large photos are resized in your browser before upload. This photograph is used on the home page and as the fallback for items without their own image.</p>
                 <?php if (isset($errors['image'])): ?><p class="field__error"><?= e($errors['image']) ?></p><?php endif; ?>
                 <?php if (!empty($category['image'])): ?>
                     <label class="check check--small">

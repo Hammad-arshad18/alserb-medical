@@ -48,8 +48,7 @@ return [
         'admin_to' => 'status@alserbmedical.com',
     ],
 
-    'uploads_dir' => dirname(__DIR__) . '/public/uploads',
-    'uploads_url' => '/uploads',
+    // Uploads go to <document root>/uploads automatically.
 
     'max_upload_bytes' => 4 * 1024 * 1024,
 ];

@@ -23,8 +23,10 @@ cp app/config.example.php app/config.local.php
 # app.url should be the public base URL, e.g. https://example.com
 # mail.host/port point to Mailpit locally
 php bin/install.php --fresh --password='choose-a-password'
-php -S localhost:8080 router.php
+php -d upload_max_filesize=8M -d post_max_size=12M -S localhost:8080 router.php
 ```
+
+The `-d` flags matter: PHP's default 2 MB upload limit is below the 4 MB the admin form allows, so product photos would fail without them. Production raises the same values with `public/.user.ini`.
 
 Open <http://localhost:8080>. The root redirects to `/ar`; the English site is under `/en`.
 
@@ -93,7 +95,7 @@ The admin interface is English. Product, department, and page-text fields are pa
 
 The public order flow stores the customer details and an item snapshot, clears the cart, shows a token-protected status page with a full tracking timeline, and emails the customer an order link. No payment step is present.
 
-Uploaded images are checked for JPEG/PNG/WebP type and a 4 MB limit, stored in `public/uploads/` with random names, and never executed. Forms use CSRF tokens; output is escaped. Admin sessions use `password_hash` / `password_verify`.
+Uploaded images are checked for JPEG/PNG/WebP type and a 4 MB limit, stored in `public/uploads/` with random names, and never executed. The upload form shrinks photos wider or taller than 1800 px in the browser before sending them, so ordinary phone photos upload cleanly. The hint under the file field always shows the effective limit for the current server. Forms use CSRF tokens; output is escaped. Admin sessions use `password_hash` / `password_verify`.
 
 ## Email and security
 
@@ -168,11 +170,31 @@ The public credits page repeats these attributions.
 
 ## Deployment notes
 
-- Point the web server document root at `public/`, not the project root.
-- Keep `app/config.local.php` outside version control and restrict access to it.
-- Ensure `public/uploads/` is writable by PHP and that PHP execution there stays disabled.
-- For Apache, `mod_rewrite` must be enabled so clean URLs work.
-- With the PHP built-in server, run `php -S localhost:8080 router.php` from the project root. The router serves files from `public/` and blocks PHP source files.
+### Folder layout on shared hosting
+
+The host's web root is `public_html/`. Only the contents of the local `public/` folder belong there; the application code stays one level above it, outside the web root.
+
+```text
+/home/USER/
+├── app/                 ← the whole app/ folder (config, classes, views, lang)
+├── bin/                 ← optional on the server
+└── public_html/         ← contents of the local public/ folder
+    ├── index.php
+    ├── .htaccess
+    ├── .user.ini
+    ├── assets/
+    ├── uploads/         ← created automatically, must be writable
+    └── site.webmanifest
+```
+
+- Point the domain document root at `public_html/`. Do not upload the project root itself into `public_html/`.
+- Keep `app/config.local.php` outside the web root and restrict access to it.
+- Uploads are written to `<document root>/uploads` automatically, so no path setting is needed. The app uses the directory of the running `index.php`, which is `public_html/` on the host and `public/` locally.
+- Move any images left in the old project-relative `public/uploads/` folder into `public_html/uploads/`. The app also moves them automatically on first view when the folder is writable.
+- Ensure `public_html/uploads/` is writable by PHP (directory `0775`, files `0644`) and that PHP execution there stays disabled via `public/uploads/.htaccess`.
+- Keep `public_html/.user.ini` in place. It raises `upload_max_filesize` to 8M and `post_max_size` to 12M so phone photos are accepted; the app still enforces its own 4 MB limit. If the host ignores `.user.ini`, set the same values in the hosting panel.
+- For Apache/LiteSpeed, `mod_rewrite` must be enabled so clean URLs work.
+- With the PHP built-in server, run `php -d upload_max_filesize=8M -d post_max_size=12M -S localhost:8080 router.php` from the project root. The router serves files from `public/` and blocks PHP source files.
 
 ## Check before calling it done
 
