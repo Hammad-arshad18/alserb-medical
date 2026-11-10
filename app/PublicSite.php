@@ -33,13 +33,73 @@ final class PublicSite
             }
         }
 
+        $siteUrl = app_url();
+        $organizationId = $siteUrl . '/#organization';
+        $offerItems = [];
+        foreach ($categories as $index => $category) {
+            $offerItems[] = [
+                '@type' => 'Offer',
+                'itemOffered' => [
+                    '@type' => 'Service',
+                    'name' => bi($category, 'name'),
+                    'description' => bi($category, 'summary'),
+                    'url' => $siteUrl . lang_url('/equipment?category=' . rawurlencode((string) $category['slug'])),
+                ],
+                'position' => $index + 1,
+            ];
+        }
+
+        $faqEntities = [];
+        foreach (AgentReady::faqs() as $faq) {
+            $faqEntities[] = [
+                '@type' => 'Question',
+                'name' => $faq['question'],
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text' => $faq['answer'],
+                ],
+            ];
+        }
+
+        $jsonLd = [
+            [
+                '@type' => 'Service',
+                '@id' => $siteUrl . '/#supply-service',
+                'name' => t('home.supply.title'),
+                'description' => t('home.supply.lead'),
+                'provider' => ['@id' => $organizationId],
+                'areaServed' => [
+                    '@type' => 'Country',
+                    'name' => is_rtl() ? 'ليبيا' : 'Libya',
+                ],
+                'serviceType' => 'Medical equipment supply',
+                'url' => $siteUrl . lang_url('/supply'),
+            ],
+            [
+                '@type' => 'OfferCatalog',
+                '@id' => $siteUrl . '/#equipment-catalog',
+                'name' => t('home.categories.title'),
+                'description' => t('home.categories.lead'),
+                'url' => $siteUrl . lang_url('/equipment'),
+                'itemListElement' => $offerItems,
+            ],
+            [
+                '@type' => 'FAQPage',
+                '@id' => $siteUrl . lang_url('/') . '#faq',
+                'mainEntity' => $faqEntities,
+                'isPartOf' => ['@id' => $siteUrl . '/#website'],
+            ],
+        ];
+
         render('public/home', [
             'metaTitle' => null,
             'metaDescription' => t('meta.home'),
             'metaKeywords' => t('meta.keywords.home'),
             'bodyClass' => 'page-home',
+            'jsonLd' => $jsonLd,
             'categories' => $categories,
             'featured' => $featured,
+            'faqs' => AgentReady::faqs(),
         ]);
     }
 
@@ -50,6 +110,18 @@ final class PublicSite
             'metaDescription' => t('meta.about'),
             'metaKeywords' => t('meta.keywords.about'),
             'bodyClass' => 'page-about',
+            'jsonLd' => [
+                [
+                    '@type' => 'AboutPage',
+                    '@id' => canonical_url() . '#page',
+                    'url' => canonical_url(),
+                    'name' => t('about.title'),
+                    'description' => t('meta.about'),
+                    'inLanguage' => current_lang(),
+                    'isPartOf' => ['@id' => app_url() . '/#website'],
+                    'about' => ['@id' => app_url() . '/#organization'],
+                ],
+            ],
         ]);
     }
 
@@ -239,11 +311,89 @@ final class PublicSite
 
     public static function supply(): void
     {
+        $faqEntities = [];
+        foreach (AgentReady::faqs() as $faq) {
+            $faqEntities[] = [
+                '@type' => 'Question',
+                'name' => $faq['question'],
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text' => $faq['answer'],
+                ],
+            ];
+        }
+
         render('public/supply', [
             'metaTitle' => t('nav.supply'),
             'metaDescription' => t('meta.supply'),
             'metaKeywords' => t('meta.keywords.supply'),
             'bodyClass' => 'page-supply',
+            'faqs' => AgentReady::faqs(),
+            'jsonLd' => [
+                [
+                    '@type' => 'FAQPage',
+                    '@id' => canonical_url() . '#faq',
+                    'url' => canonical_url(),
+                    'name' => t('supply.title'),
+                    'description' => t('meta.supply'),
+                    'mainEntity' => $faqEntities,
+                    'isPartOf' => ['@id' => app_url() . '/#website'],
+                ],
+                [
+                    '@type' => 'HowTo',
+                    '@id' => canonical_url() . '#howto',
+                    'name' => t('supply.title'),
+                    'description' => t('supply.lead'),
+                    'step' => [
+                        [
+                            '@type' => 'HowToStep',
+                            'position' => 1,
+                            'name' => t('supply.step1.title'),
+                            'text' => t('supply.step1.body'),
+                        ],
+                        [
+                            '@type' => 'HowToStep',
+                            'position' => 2,
+                            'name' => t('supply.step2.title'),
+                            'text' => t('supply.step2.body'),
+                        ],
+                        [
+                            '@type' => 'HowToStep',
+                            'position' => 3,
+                            'name' => t('supply.step3.title'),
+                            'text' => t('supply.step3.body'),
+                        ],
+                        [
+                            '@type' => 'HowToStep',
+                            'position' => 4,
+                            'name' => t('supply.step4.title'),
+                            'text' => t('supply.step4.body'),
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public static function terms(): void
+    {
+        render('public/terms', [
+            'metaTitle' => t('nav.terms'),
+            'metaDescription' => t('meta.terms'),
+            'metaKeywords' => t('meta.keywords.terms'),
+            'bodyClass' => 'page-terms',
+            'jsonLd' => [
+                [
+                    '@type' => 'WebPage',
+                    '@id' => canonical_url() . '#page',
+                    'url' => canonical_url(),
+                    'name' => t('terms.title'),
+                    'description' => t('meta.terms'),
+                    'inLanguage' => current_lang(),
+                    'isPartOf' => ['@id' => app_url() . '/#website'],
+                    'about' => ['@id' => app_url() . '/#organization'],
+                ],
+            ],
         ]);
     }
 
@@ -628,6 +778,18 @@ final class PublicSite
             'old' => $old,
             'product' => $product,
             'sent' => $sent,
+            'jsonLd' => [
+                [
+                    '@type' => 'ContactPage',
+                    '@id' => canonical_url() . '#page',
+                    'url' => canonical_url(),
+                    'name' => t('contact.title'),
+                    'description' => t('meta.contact', ['city' => setting_city()]),
+                    'inLanguage' => current_lang(),
+                    'isPartOf' => ['@id' => app_url() . '/#website'],
+                    'about' => ['@id' => app_url() . '/#organization'],
+                ],
+            ],
         ]);
     }
 
@@ -671,8 +833,11 @@ final class PublicSite
     {
         header('Content-Type: text/plain; charset=utf-8');
 
+        AgentReady::emitCommonHeaders();
+
         $lines = [
             'User-agent: *',
+            'Content-Signal: ' . AgentReady::CONTENT_SIGNAL,
             'Allow: /',
             'Disallow: /admin',
             'Disallow: /ar/cart',
@@ -701,6 +866,7 @@ final class PublicSite
             ['path' => '/equipment', 'lastmod' => null],
             ['path' => '/supply', 'lastmod' => null],
             ['path' => '/contact', 'lastmod' => null],
+            ['path' => '/terms', 'lastmod' => null],
             ['path' => '/credits', 'lastmod' => null],
         ];
 

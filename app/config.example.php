@@ -23,6 +23,11 @@ return [
         'url' => 'http://localhost:8080',
         // Optional X/Twitter handle, e.g. '@alserbmedical'. Leave empty to omit.
         'twitter' => '',
+        // External profile URLs for Organization sameAs (Facebook, Instagram, LinkedIn, Google Business, etc.).
+        'same_as' => [
+            // 'https://www.facebook.com/your-page',
+            // 'https://www.linkedin.com/company/your-company',
+        ],
     ],
 
     'mail' => [

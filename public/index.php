@@ -34,6 +34,7 @@ session_start();
 
 require APP_ROOT . '/app/helpers.php';
 require APP_ROOT . '/app/Router.php';
+require APP_ROOT . '/app/AgentReady.php';
 require APP_ROOT . '/app/PublicSite.php';
 require APP_ROOT . '/app/Admin.php';
 require APP_ROOT . '/app/Mailer.php';
@@ -41,6 +42,7 @@ require APP_ROOT . '/app/Mailer.php';
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 header('X-Frame-Options: SAMEORIGIN');
+header('Content-Signal: ' . AgentReady::CONTENT_SIGNAL);
 header("Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; script-src 'self'; form-action 'self'; base-uri 'self'; frame-ancestors 'self'");
 
 set_exception_handler(static function (Throwable $error): void {
@@ -104,7 +106,27 @@ if ($requestPath === '/sitemap.xml') {
     exit;
 }
 
+if ($requestPath === '/llms.txt') {
+    AgentReady::llmsTxt();
+    exit;
+}
+
+if ($requestPath === '/.well-known/mcp/server-card.json') {
+    AgentReady::mcpServerCard();
+    exit;
+}
+
+if ($requestPath === '/mcp') {
+    AgentReady::mcp();
+    exit;
+}
+
 if ($requestPath === '/') {
+    if (AgentReady::wantsMarkdown()) {
+        $GLOBALS['lang'] = 'en';
+        PublicSite::home();
+        exit;
+    }
     redirect('/ar');
 }
 

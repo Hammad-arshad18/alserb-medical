@@ -170,6 +170,32 @@ $intro = setting('home_intro');
     </div>
 </section>
 
+<section class="section section--tint" id="faq">
+    <div class="shell">
+        <header class="section-head">
+            <div class="section-head__top">
+                <p class="eyebrow"><?= e(t('faq.eyebrow')) ?></p>
+                <a class="link-arrow" href="<?= e(lang_url('/terms')) ?>"><?= e(t('nav.terms')) ?>
+                    <svg class="icon-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 3.5 13 8l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                </a>
+            </div>
+            <div class="section-head__row">
+                <h2><?= e(t('faq.title')) ?></h2>
+                <p class="section-head__lead"><?= e(t('faq.lead')) ?></p>
+            </div>
+        </header>
+
+        <div class="faq-list">
+            <?php foreach (($faqs ?? []) as $index => $faq): ?>
+                <details class="faq-item"<?= $index === 0 ? ' open' : '' ?>>
+                    <summary><?= e($faq['question']) ?></summary>
+                    <p><?= e($faq['answer']) ?></p>
+                </details>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+
 <section class="cta">
     <div class="shell cta__inner">
         <div>

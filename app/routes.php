@@ -12,6 +12,7 @@ $router->get('/supply', static fn (): mixed => PublicSite::supply());
 $router->get('/contact', static fn (): mixed => PublicSite::contact());
 $router->post('/contact', static fn (): mixed => PublicSite::contact());
 $router->get('/credits', static fn (): mixed => PublicSite::credits());
+$router->get('/terms', static fn (): mixed => PublicSite::terms());
 
 $router->get('/cart', static fn (): mixed => PublicSite::cart());
 $router->post('/cart/add', static fn (): mixed => PublicSite::cartAdd());

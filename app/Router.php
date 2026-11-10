@@ -37,6 +37,11 @@ final class Router
 
     public function dispatch(string $method, string $path): void
     {
+        // Agents and caches often probe with HEAD; treat it as GET for public pages.
+        if ($method === 'HEAD') {
+            $method = 'GET';
+        }
+
         foreach ($this->routes as $route) {
             if ($route['method'] !== $method) {
                 continue;

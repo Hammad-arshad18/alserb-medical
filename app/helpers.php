@@ -394,6 +394,16 @@ function redirect(string $path, int $status = 302): never
 
 function render(string $view, array $data = []): void
 {
+    AgentReady::emitCommonHeaders();
+    AgentReady::emitLinkHeaders(canonical_url());
+
+    if (AgentReady::wantsMarkdown()) {
+        $markdown = AgentReady::markdownForView($view, $data);
+        if ($markdown !== null) {
+            AgentReady::serveMarkdown($markdown);
+        }
+    }
+
     extract($data, EXTR_SKIP);
 
     ob_start();

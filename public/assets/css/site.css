@@ -2601,6 +2601,61 @@ ol {
     text-transform: uppercase;
 }
 
+.footer__base a {
+    color: rgba(255, 255, 255, 0.55);
+    text-decoration: none;
+}
+
+.footer__base a:hover {
+    color: #fff;
+}
+
+.faq-list {
+    display: grid;
+    gap: 12px;
+    max-width: 720px;
+}
+
+.faq-item {
+    border: 1px solid var(--line);
+    background: #fff;
+    padding: 14px 18px;
+}
+
+.faq-item summary {
+    cursor: pointer;
+    font-weight: 600;
+    list-style: none;
+}
+
+.faq-item summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-item p {
+    margin-block-start: 10px;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.prose-block {
+    max-width: 720px;
+}
+
+.prose-block h2 {
+    margin-block: 1.6em 0.55em;
+    font-size: 1.15rem;
+}
+
+.prose-block p {
+    line-height: 1.7;
+    color: var(--muted);
+}
+
+.prose-block__cta {
+    margin-block-start: 2rem;
+}
+
 /* Track, timeline, rate limit --------------------------------------------- */
 
 .track-layout {

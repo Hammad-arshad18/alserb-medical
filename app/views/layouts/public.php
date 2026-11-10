@@ -53,6 +53,8 @@ $navItems = [
     <meta name="geo.placename" content="<?= e(setting_city()) ?>">
     <link rel="canonical" href="<?= e($canonical) ?>">
     <link rel="manifest" href="/site.webmanifest">
+    <link rel="alternate" type="text/markdown" href="<?= e($canonical) ?>">
+    <link rel="describedby" href="<?= e(app_url() . '/llms.txt') ?>" type="text/plain">
     <link rel="alternate" hreflang="ar" href="<?= e(alternate_url('ar')) ?>">
     <link rel="alternate" hreflang="en" href="<?= e(alternate_url('en')) ?>">
     <link rel="alternate" hreflang="x-default" href="<?= e(alternate_url('en')) ?>">
@@ -89,30 +91,43 @@ $navItems = [
     <?php
     $siteUrl = app_url();
     $organizationId = $siteUrl . '/#organization';
-    $graph = array_merge([
-        [
-            '@type' => 'MedicalBusiness',
-            '@id' => $organizationId,
-            'name' => t('site.name'),
-            'alternateName' => is_rtl() ? 'Alserb Medical' : 'السرب الطبي',
-            'description' => t('meta.about'),
-            'url' => $siteUrl . lang_url('/'),
-            'logo' => absolute_url('/assets/img/logo-lockup.png'),
-            'image' => $ogImage,
+    $sameAs = AgentReady::sameAsProfiles();
+    $organization = [
+        '@type' => ['MedicalBusiness', 'LocalBusiness', 'Organization'],
+        '@id' => $organizationId,
+        'name' => t('site.name'),
+        'alternateName' => is_rtl() ? 'Alserb Medical' : 'السرب الطبي',
+        'description' => t('meta.about'),
+        'url' => $siteUrl . lang_url('/'),
+        'logo' => absolute_url('/assets/img/logo-lockup.png'),
+        'image' => $ogImage,
+        'telephone' => $phone,
+        'email' => $email,
+        'address' => [
+            '@type' => 'PostalAddress',
+            'streetAddress' => $address,
+            'addressLocality' => setting_city(),
+            'addressCountry' => 'LY',
+        ],
+        'areaServed' => [
+            '@type' => 'Country',
+            'name' => is_rtl() ? 'ليبيا' : 'Libya',
+        ],
+        'knowsLanguage' => ['ar', 'en'],
+        'contactPoint' => [
+            '@type' => 'ContactPoint',
             'telephone' => $phone,
             'email' => $email,
-            'address' => [
-                '@type' => 'PostalAddress',
-                'streetAddress' => $address,
-                'addressLocality' => setting_city(),
-                'addressCountry' => 'LY',
-            ],
-            'areaServed' => [
-                '@type' => 'Country',
-                'name' => is_rtl() ? 'ليبيا' : 'Libya',
-            ],
-            'knowsLanguage' => ['ar', 'en'],
+            'contactType' => 'sales',
+            'availableLanguage' => ['ar', 'en'],
+            'areaServed' => 'LY',
         ],
+    ];
+    if ($sameAs !== []) {
+        $organization['sameAs'] = $sameAs;
+    }
+    $graph = array_merge([
+        $organization,
         [
             '@type' => 'WebSite',
             '@id' => $siteUrl . '/#website',
@@ -137,7 +152,20 @@ $navItems = [
     ?>
     <script type="application/ld+json"><?= $schemaJson ?></script>
 </head>
-<body class="<?= e($bodyClass) ?>">
+<body
+    class="<?= e($bodyClass) ?>"
+    data-phone="<?= e($phone) ?>"
+    data-email="<?= e($email) ?>"
+    data-address="<?= e($address) ?>"
+    data-whatsapp="<?= e(setting('whatsapp')) ?>"
+    data-home-url="<?= e(lang_url('/')) ?>"
+    data-equipment-url="<?= e(lang_url('/equipment')) ?>"
+    data-contact-url="<?= e(lang_url('/contact')) ?>"
+    data-about-url="<?= e(lang_url('/about')) ?>"
+    data-supply-url="<?= e(lang_url('/supply')) ?>"
+    data-terms-url="<?= e(lang_url('/terms')) ?>"
+    data-site-name="<?= e(t('site.name')) ?>"
+>
 <a class="skip-link" href="#main"><?= is_rtl() ? 'تجاوز إلى المحتوى' : 'Skip to content' ?></a>
 
 <div class="utility">
@@ -235,6 +263,7 @@ $navItems = [
                     <li><a href="<?= e(lang_url('/equipment')) ?>"><?= e(t('nav.equipment')) ?></a></li>
                     <li><a href="<?= e(lang_url('/about')) ?>"><?= e(t('nav.about')) ?></a></li>
                     <li><a href="<?= e(lang_url('/supply')) ?>"><?= e(t('nav.supply')) ?></a></li>
+                    <li><a href="<?= e(lang_url('/contact')) ?>"><?= e(t('nav.contact')) ?></a></li>
                     <li><a href="<?= e(lang_url('/credits')) ?>"><?= e(t('nav.credits')) ?></a></li>
                 </ul>
             </div>
@@ -251,13 +280,14 @@ $navItems = [
                     <?php if ($address !== ''): ?>
                         <li class="footer__address"><?= e($address) ?></li>
                     <?php endif; ?>
+                    <li><a href="<?= e(lang_url('/terms')) ?>"><?= e(t('nav.terms')) ?></a></li>
                 </ul>
             </div>
         </div>
 
         <div class="footer__base">
             <p><?= e(t('footer.legal', ['year' => date('Y')])) ?></p>
-            <p><?= e(t('footer.note')) ?></p>
+            <p><a href="<?= e(lang_url('/terms')) ?>"><?= e(t('nav.terms')) ?></a> · <?= e(t('footer.note')) ?></p>
         </div>
     </div>
 </footer>

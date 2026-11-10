@@ -26,6 +26,10 @@ return [
         'url' => 'https://alserbmedical.com',
         // Optional X/Twitter handle, e.g. '@alserbmedical'. Leave empty to omit.
         'twitter' => '',
+        // External profile URLs for Organization sameAs. WhatsApp from settings is added automatically.
+        'same_as' => [
+            // Add Facebook / Instagram / LinkedIn / Google Business Profile URLs when available.
+        ],
     ],
 
     'mail' => [
