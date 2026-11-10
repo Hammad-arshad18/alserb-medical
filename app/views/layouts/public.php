@@ -83,8 +83,8 @@ $navItems = [
     <link rel="icon" href="<?= e(asset('/assets/img/favicon.svg')) ?>" type="image/svg+xml">
     <link rel="icon" href="<?= e(asset('/assets/img/favicon-32.png')) ?>" sizes="32x32" type="image/png">
     <link rel="apple-touch-icon" href="<?= e(asset('/assets/img/favicon-180.png')) ?>">
-    <link rel="stylesheet" href="<?= e(asset('/assets/css/fonts.css')) ?>">
-    <link rel="stylesheet" href="<?= e(asset('/assets/css/site.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('/assets/css/fonts.min.css')) ?>">
+    <link rel="stylesheet" href="<?= e(asset('/assets/css/site.min.css')) ?>">
     <script src="<?= e(asset('/assets/js/site.js')) ?>" defer></script>
     <?php
     $siteUrl = app_url();
